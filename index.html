@@ -49,7 +49,53 @@ function makeGroup(){return ticker.map(x=>`<span class="item">${code()} baru saj
 document.getElementById("track").innerHTML='<div class="ticker-group">'+makeGroup()+'</div><div class="ticker-group">'+makeGroup()+'</div>';
 cat.onchange=()=>{svc.innerHTML='<option value="">Pilih Layanan</option>';(services[cat.value]||[]).forEach((x,i)=>{let o=document.createElement("option");o.value=i;o.textContent=x[0]+" - Rp"+x[1].toLocaleString("id-ID")+"/1.000";svc.appendChild(o)});calc()};
 function calc(){if(cat.value&&svc.value!==""){let x=services[cat.value][svc.value],n=+qty.value||0;price.value="Rp"+x[1].toLocaleString("id-ID")+" / 1.000";total.value="Rp"+((x[1]/1000)*n).toLocaleString("id-ID")}else price.value=total.value=""}svc.onchange=calc;qty.oninput=calc;
-function order(){let t=target.value.trim(),n=+qty.value;if(!cat.value||svc.value==="")return alert("Pilih kategori dan layanan.");if(!t)return alert("Masukkan link atau username.");if(n<1000)return alert("Minimal order 1.000.");let x=services[cat.value][svc.value];if(n%1000)return alert("Jumlah harus kelipatan 1.000.");ord.textContent=code();pc.textContent=cat.value;ps.textContent=x[0];pt.textContent=t;pq.textContent=n.toLocaleString("id-ID");ptot.textContent=total.value;qrisTotal.textContent=total.value;payment.style.display="block";payment.scrollIntoView({behavior:"smooth"})}
+async function order(){
+  let t=target.value.trim(),n=+qty.value;
+  if(!cat.value||svc.value==="")return alert("Pilih kategori dan layanan.");
+  if(!t)return alert("Masukkan link atau username.");
+  if(n<1000)return alert("Minimal order 1.000.");
+  let x=services[cat.value][svc.value];
+  if(n%1000)return alert("Jumlah harus kelipatan 1.000.");
+
+  const orderNumber=code();
+  const orderButton=document.querySelector('button[onclick="order()"]');
+  const originalText=orderButton.textContent;
+  orderButton.disabled=true;
+  orderButton.textContent="Mengirim...";
+
+  try{
+    const response=await fetch("/api/send-order",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        orderNumber,
+        category:cat.value,
+        service:x[0],
+        target:t,
+        quantity:n.toLocaleString("id-ID"),
+        price:price.value,
+        total:total.value
+      })
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.ok)throw new Error(result.message||"Email gagal dikirim.");
+
+    ord.textContent=orderNumber;
+    pc.textContent=cat.value;
+    ps.textContent=x[0];
+    pt.textContent=t;
+    pq.textContent=n.toLocaleString("id-ID");
+    ptot.textContent=total.value;
+    qrisTotal.textContent=total.value;
+    payment.style.display="block";
+    payment.scrollIntoView({behavior:"smooth"});
+  }catch(error){
+    alert("Pesanan belum diproses karena notifikasi email gagal dikirim. Silakan coba lagi.\n\n"+error.message);
+  }finally{
+    orderButton.disabled=false;
+    orderButton.textContent=originalText;
+  }
+}
 
 function copyPaymentTotal(){
   const value=qrisTotal.textContent;
