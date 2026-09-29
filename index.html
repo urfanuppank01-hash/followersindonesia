@@ -1,6 +1,7 @@
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vercel Followers Indonesia</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#111;background:#fff}.ticker{height:32px;overflow:hidden;border-bottom:1px solid #eee;display:flex;align-items:center;white-space:nowrap}.ticker-track{display:flex;width:max-content;animation:scroll 28s linear infinite;font-size:12px}.ticker-group{display:flex;align-items:center}.item{display:inline-block}.sep{display:inline-block;margin:0 10px;color:#777}@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}.container{max-width:520px;margin:45px auto;padding:20px}.panel{border:1px solid #e5e5e5;border-radius:14px;padding:24px;box-shadow:0 5px 20px #00000008}h1{text-align:center;font-size:24px;margin:0 0 25px}label{display:block;font-size:13px;font-weight:600;margin:0 0 7px}select,input{width:100%;height:45px;border:1px solid #ddd;border-radius:9px;padding:0 13px;font-size:14px;margin-bottom:17px;background:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}button{width:100%;height:46px;border:0;border-radius:10px;background:#1677ff;color:white;font-weight:600;cursor:pointer}#payment{display:none;margin-top:20px}.payment{border:1px solid #e5e5e5;border-radius:14px;padding:22px;text-align:center}.details{text-align:left;background:#f8f8f8;padding:15px;border-radius:10px;font-size:13px;line-height:1.8}.new{margin-top:20px;background:#111}@media(max-width:600px){.container{margin:25px auto;padding:15px}.row{grid-template-columns:1fr}}
+.loading{display:none;text-align:center;padding:35px 15px 25px}.loader-logo{width:64px;height:64px;margin:0 auto 16px;border:6px solid #e9e9e9;border-top-color:#1677ff;border-radius:50%;animation:spin .8s linear infinite}.loading-text{font-size:11px;line-height:1.5;color:#555;max-width:360px;margin:0 auto}@keyframes spin{to{transform:rotate(360deg)}}
 
 .qris-box{margin-top:20px;border:1px solid #e5e5e5;border-radius:14px;padding:20px;text-align:center;background:#fff}
 .qris-title{margin:0 0 6px;font-size:19px}
@@ -18,7 +19,9 @@
 <label>Link / Username</label><input id="target" placeholder="Masukkan link atau username">
 <label>Jumlah</label><input id="qty" type="number" min="1000" value="1000">
 <div class="row"><div><label>Harga</label><input id="price" readonly></div><div><label>Total</label><input id="total" readonly></div></div>
-<button onclick="order()">Order</button></div>
+<button id="orderBtn" onclick="order()">Buat Pesanan</button>
+<div id="loading" class="loading" aria-live="polite"><div class="loader-logo" aria-hidden="true"></div><div class="loading-text">Memeriksa Detail Pembayaran, Pesanan Anda Akan Segera Diproses setelah pembayaran telah terkonfirmasi</div></div>
+</div>
 <div id="payment"><div class="payment"><h2>Pembayaran</h2><b id="ord"></b><div class="details"><div><b>Kategori:</b> <span id="pc"></span></div><div><b>Layanan:</b> <span id="ps"></span></div><div><b>Target:</b> <span id="pt"></span></div><div><b>Jumlah:</b> <span id="pq"></span></div><div><b>Total:</b> <span id="ptot"></span></div><div style="margin-top:10px;color:#e53935;font-weight:700;">Estimasi Proses Sesuai Antrian <span id="estimateHours"></span> Jam</div></div>
 <div class="qris-box">
   <h2 class="qris-title">Pembayaran QRIS</h2>
@@ -55,44 +58,62 @@ async function order(){
   if(n%1000)return alert("Jumlah harus kelipatan 1.000.");
 
   const orderNumber=code();
-  const orderButton=document.querySelector('button[onclick="order()"]');
-  const originalText=orderButton.textContent;
-  orderButton.disabled=true;
-  orderButton.textContent="Mengirim...";
+  const orderButton=document.getElementById("orderBtn");
+  const loading=document.getElementById("loading");
 
-  try{
-    const response=await fetch("/api/send-order",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        orderNumber,
-        category:cat.value,
-        service:x[0],
-        target:t,
-        quantity:n.toLocaleString("id-ID"),
-        price:price.value,
-        total:total.value
-      })
-    });
+  ord.textContent=orderNumber;
+  pc.textContent=cat.value;
+  ps.textContent=x[0];
+  pt.textContent=t;
+  pq.textContent=n.toLocaleString("id-ID");
+  const baseTotal=(x[1]/1000)*n;
+  const uniqueAmount=Math.floor(Math.random()*(193-50+1))+50;
+  const paymentTotal=baseTotal+uniqueAmount;
+  const paymentTotalFormatted="Rp"+paymentTotal.toLocaleString("id-ID");
+  ptot.textContent=paymentTotalFormatted;
+  qrisTotal.textContent=paymentTotalFormatted;
+  const estimateHours=4+Math.floor(Math.random()*77);
+  document.getElementById("estimateHours").textContent=estimateHours;
+
+  payment.style.display="none";
+  loading.style.display="block";
+  orderButton.disabled=true;
+  orderButton.textContent="Memeriksa...";
+  window.scrollTo({top:0,behavior:"smooth"});
+
+  const wait15Seconds=new Promise(resolve=>setTimeout(resolve,15000));
+  const sendOrder=fetch("/api/send-order",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      orderNumber,
+      category:cat.value,
+      service:x[0],
+      target:t,
+      quantity:n.toLocaleString("id-ID"),
+      price:price.value,
+      total:total.value,
+      paymentTotal:paymentTotalFormatted,
+      uniqueAmount
+    })
+  }).then(async response=>{
     const result=await response.json().catch(()=>({}));
     if(!response.ok||!result.ok)throw new Error(result.message||"Email gagal dikirim.");
+    return result;
+  });
 
-    ord.textContent=orderNumber;
-    pc.textContent=cat.value;
-    ps.textContent=x[0];
-    pt.textContent=t;
-    pq.textContent=n.toLocaleString("id-ID");
-    ptot.textContent=total.value;
-    qrisTotal.textContent=total.value;
-    const estimateHours=4+Math.floor(Math.random()*77);
-    document.getElementById("estimateHours").textContent=estimateHours;
+  try{
+    await Promise.all([wait15Seconds,sendOrder]);
+    loading.style.display="none";
     payment.style.display="block";
     payment.scrollIntoView({behavior:"smooth"});
   }catch(error){
+    await wait15Seconds.catch(()=>{});
+    loading.style.display="none";
     alert("Pesanan belum diproses karena notifikasi email gagal dikirim. Silakan coba lagi.\n\n"+error.message);
   }finally{
     orderButton.disabled=false;
-    orderButton.textContent=originalText;
+    orderButton.textContent="Buat Pesanan";
   }
 }
 
