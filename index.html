@@ -35,17 +35,15 @@
 <div class="pay-total" id="qrisTotal">Rp0</div>
   <button class="copy-total" type="button" onclick="copyPaymentTotal()">Salin Nominal</button>
   <div class="qris-warning">
-    QRIS pada halaman ini adalah QRIS statis. Nominal pada QR tidak terkunci otomatis;
-    pastikan Anda memasukkan nominal yang sama seperti yang tertera di atas saat melakukan pembayaran.
-    Untuk QRIS dinamis yang nominalnya benar-benar tertanam di QR, diperlukan integrasi resmi dari penyedia QRIS/payment gateway.
+    Pastikan Anda memasukkan nominal yang sama seperti yang tertera di atas saat melakukan pembayaran.
   </div>
 </div>
 <button class="new" type="button" onclick="showPaymentDescription()">Saya Sudah Melakukan Pembayaran Dengan 3 Angka Unik</button></div></div></div>
 <script>
-const services={TikTok:[["TikTok Followers Tanpa Drop",25000,1000],["TikTok Likes Tanpa Drop",6000,1000],["TikTok Views Tanpa Drop",8000,1000]],Instagram:[["Instagram Followers Anti Drop",20000,1000],["Instagram Likes Foto Anti Drop",5000,1000],["Instagram Likes Video/Reels Anti Drop",7000,1000],["Instagram Views Anti Drop",8000,1000],["Instagram Saves Anti Drop",5000,1000]],YouTube:[["YouTube Subscriber",40000,1000],["YouTube Short/Video Views",45000,1000],["YouTube Short/Video Likes",15000,1000]],Facebook:[["Facebook Pengikut",20000,1000],["Facebook Share",9000,1000],["Facebook Views Video/Reels",35000,1000]]};
+const services={TikTok:[["TikTok Followers Tanpa Drop",25000,1000],["TikTok Likes Tanpa Drop",6000,1000],["TikTok Views Tanpa Drop",8000,1000],["Tiktok Save Tanpa Drop",5000,1000]],Instagram:[["Instagram Followers Anti Drop",20000,1000],["Instagram Likes Foto Anti Drop",5000,1000],["Instagram Likes Video/Reels Anti Drop",7000,1000],["Instagram Views Anti Drop",8000,1000],["Instagram Saves Anti Drop",5000,1000]],YouTube:[["YouTube Subscriber",40000,1000],["YouTube Short/Video Views",45000,1000],["YouTube Short/Video Likes",15000,1000]],Facebook:[["Facebook Pengikut",20000,1000],["Facebook Share",9000,1000],["Facebook Views Video/Reels",35000,1000]]};
 const ticker=[["TikTok","Followers No Drop"],["TikTok","Likes No Drop"],["Instagram","Followers Anti Drop"],["Instagram","Likes Foto Anti Drop"],["YouTube","Subscriber"],["YouTube","Short/Video Views"],["Facebook","Pengikut"],["Facebook","Share"]];
 const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";function code(){let x="VF-";for(let i=0;i<10;i++)x+=chars[Math.floor(Math.random()*chars.length)];return x}function q(){return [1000,2000,3000,5000,10000][Math.floor(Math.random()*5)]}
-function makeGroup(){return ticker.map(x=>`<span class="item">${code()} baru saja memesan ${q().toLocaleString("id-ID")} (${x[1]})</span><span class="sep">|</span>`).join("")}
+function makeGroup(){return ticker.map(x=>{const recency=Math.random()<0.3?"beberapa menit lalu":"beberapa jam lalu";return `<span class="item">${code()} ${recency} memesan ${q().toLocaleString("id-ID")} (${x[1]})</span><span class="sep">|</span>`}).join("")}
 document.getElementById("track").innerHTML='<div class="ticker-group">'+makeGroup()+'</div><div class="ticker-group">'+makeGroup()+'</div>';
 cat.onchange=()=>{svc.innerHTML='<option value="">Pilih Layanan</option>';(services[cat.value]||[]).forEach((x,i)=>{let o=document.createElement("option");o.value=i;o.textContent=x[0]+" - Rp"+x[1].toLocaleString("id-ID")+"/1.000";svc.appendChild(o)});calc()};
 function calc(){if(cat.value&&svc.value!==""){let x=services[cat.value][svc.value],n=+qty.value||0;price.value="Rp"+x[1].toLocaleString("id-ID")+" / 1.000";total.value="Rp"+((x[1]/1000)*n).toLocaleString("id-ID")}else price.value=total.value=""}svc.onchange=calc;qty.oninput=calc;
