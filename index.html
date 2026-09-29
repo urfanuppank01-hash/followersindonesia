@@ -22,7 +22,7 @@
 <button id="orderBtn" onclick="order()">Buat Pesanan</button>
 <div id="loading" class="loading" aria-live="polite"><div class="loader-logo" aria-hidden="true"></div><div class="loading-text">Memeriksa Detail Pembayaran, Pesanan Anda Akan Segera Diproses setelah pembayaran telah terkonfirmasi</div></div>
 </div>
-<div id="payment"><div class="payment"><h2>Pembayaran</h2><b id="ord"></b><div class="details"><div><b>Kategori:</b> <span id="pc"></span></div><div><b>Layanan:</b> <span id="ps"></span></div><div><b>Target:</b> <span id="pt"></span></div><div><b>Jumlah:</b> <span id="pq"></span></div><div><b>Total:</b> <span id="ptot"></span></div><div style="margin-top:10px;color:#e53935;font-weight:700;">Estimasi Proses Sesuai Antrian <span id="estimateHours"></span> Jam</div></div>
+<div id="payment"><div class="payment"><div id="orderSummary" style="display:none"><h2>Pembayaran</h2><b id="ord"></b><div class="details"><div><b>Kategori:</b> <span id="pc"></span></div><div><b>Layanan:</b> <span id="ps"></span></div><div><b>Target:</b> <span id="pt"></span></div><div><b>Jumlah:</b> <span id="pq"></span></div><div><b>Total:</b> <span id="ptot"></span></div><div style="margin-top:10px;color:#e53935;font-weight:700;">Estimasi Proses Sesuai Antrian <span id="estimateHours"></span> Jam</div></div></div>
 <div class="qris-box" id="qrisBox" style="display:none">
   <h2 class="qris-title">Pembayaran QRIS</h2>
   <p class="qris-note">Scan QRIS di bawah menggunakan aplikasi pembayaran Anda.</p>
@@ -103,9 +103,9 @@ function showPaymentDescription(){
   const load=document.getElementById("loading");
   const button=document.querySelector(".new");
 
-  // Deskripsi pembayaran tetap terlihat, lalu proses pemeriksaan berjalan 15 detik.
-  const details=document.querySelector(".details");
-  if(details) details.style.display="block";
+  // Ringkasan pembayaran sengaja tetap tersembunyi sampai pemeriksaan 15 detik selesai.
+  const summary=document.getElementById("orderSummary");
+  if(summary) summary.style.display="none";
   if(box) box.style.display="block";
 
   load.style.display="block";
@@ -119,10 +119,12 @@ function showPaymentDescription(){
 
   setTimeout(()=>{
     load.style.display="none";
+    if(summary) summary.style.display="block";
     if(button){
       button.disabled=false;
       button.textContent="Saya Sudah Melakukan Pembayaran Dengan 3 Angka Unik";
     }
+    if(summary) summary.scrollIntoView({behavior:"smooth",block:"center"});
   },15000);
 }
 
